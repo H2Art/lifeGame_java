@@ -2,6 +2,7 @@ package wolf;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
@@ -34,6 +35,7 @@ public class LifeGameUI extends Application {
     private long lastUpdate = 0;
     private long frameInterval;
 
+    private static CheckBox gridToggler;
     private Slider fpsSlider;
     private Label fpsLabel;
     private Slider colsSlider;
@@ -43,12 +45,14 @@ public class LifeGameUI extends Application {
     private Label densityLabel;
     private int generationDensity = 20;
 
+    private static Color gridColor = Color.BLACK;
+
     private Stage primaryStage;
 
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-
+        gridToggler = new CheckBox();
         // Загружаем настройки из config.properties (если есть)
         int[] settings = SettingsManager.loadDefault();
         if (settings != null) {
@@ -68,7 +72,7 @@ public class LifeGameUI extends Application {
         double playingAreaHeight = currentRows * currentCellSize;
         canvas = new Canvas(playingAreaWidth, playingAreaHeight);
         board = new GameBoard(canvas, currentCellSize, currentCols, currentRows);
-        board.drawGrid();
+        board.drawGrid(gridColor);
 
         frameInterval = 1_000_000_000 / (settings != null ? settings[2] : Constants.getFps());
         initTimer();
@@ -77,6 +81,7 @@ public class LifeGameUI extends Application {
         VBox uiBox = new VBox(10);
         uiBox.setStyle("-fx-padding: 15; -fx-background-color: #e0e0e0; -fx-spacing: 12;");
         uiBox.setPrefWidth(UI_PANEL_WIDTH);
+        uiBox.setAlignment(Pos.CENTER);
 
         // Кнопки (без настроек)
         Button nextButton = new Button("Next generation");
@@ -84,10 +89,13 @@ public class LifeGameUI extends Application {
         Button startButton = new Button("Start");
         Button stopButton = new Button("Stop");
         Button randomButton = new Button("Random");
-        Button applyButton = new Button("Apply");
+        Button applyButton = new Button("Apply (pauses simulation)");
         Button saveSimButton = new Button("Save simulation");
         Button loadSimButton = new Button("Load simulation");
         generationLabel = new Label("Generation: 0");
+
+        // Чекбокс и его лейбл
+        Label gridTogglerLabel = new Label("Toggle grid");
 
         // Слайдеры
         fpsSlider = new Slider(0, 50, (settings != null ? settings[2] : Constants.getFps()));
@@ -129,7 +137,8 @@ public class LifeGameUI extends Application {
         applyButton.setOnAction(e -> applyChanges());
         saveSimButton.setOnAction(e -> saveSimulation());
         loadSimButton.setOnAction(e -> loadSimulation());
-        canvas.setOnMouseClicked(event -> userInput(event.getX(), event.getY()));
+        canvas.setOnMouseClicked(e -> userInput(e.getX(), e.getY()));
+        gridToggler.setOnAction(e -> changeGridColor());
 
         // Единая ширина кнопок
         List<Button> buttons = Arrays.asList(nextButton, resetButton, startButton, stopButton,
@@ -143,6 +152,9 @@ public class LifeGameUI extends Application {
                 nextButton, resetButton, startButton, stopButton, randomButton, applyButton,
                 new Separator(),
                 saveSimButton, loadSimButton,
+                new Separator(),
+                gridTogglerLabel,
+                gridToggler,
                 new Separator(),
                 fpsLabel, fpsSlider,
                 colsLabel, colsSlider,
@@ -168,7 +180,8 @@ public class LifeGameUI extends Application {
             SettingsManager.saveDefault(
                     currentCols, currentRows,
                     (int) fpsSlider.getValue(),
-                    generationDensity
+                    generationDensity,
+                    getGridColorString()
             );
         });
     }
@@ -206,7 +219,7 @@ public class LifeGameUI extends Application {
 
         Canvas newCanvas = new Canvas(newWidth, newHeight);
         GameBoard newBoard = new GameBoard(newCanvas, currentCellSize, currentCols, currentRows);
-        newBoard.drawGrid();
+        newBoard.drawGrid(gridColor);
 
         HBox root = (HBox) primaryStage.getScene().getRoot();
         int canvasIndex = root.getChildren().indexOf(canvas);
@@ -267,7 +280,7 @@ public class LifeGameUI extends Application {
         // Останавливаем таймер и загружаем клетки
         if (timer != null) timer.stop();
         alive.clear();
-        board.drawGrid(); // очищаем (на случай, если размеры не менялись)
+        board.drawGrid(gridColor); // очищаем (на случай, если размеры не менялись)
         alive.addAll(data.alive);
         for (Cell cell : data.alive) {
             board.fillCell(cell.getX(), cell.getY(), cell.getColor());
@@ -279,7 +292,7 @@ public class LifeGameUI extends Application {
     }
 
     // -------------------------------------------------------------
-    // Игровая логика (без изменений)
+    // Игровая логика
     // -------------------------------------------------------------
     public void nextGeneration() {
         if (alive == null) return;
@@ -338,7 +351,7 @@ public class LifeGameUI extends Application {
         if (timer != null) timer.stop();
         generation = 0;
         generationLabel.setText("Generation: 0");
-        board.drawGrid();
+        board.drawGrid(gridColor);
         alive.clear();
         lastUpdate = 0;
     }
@@ -346,7 +359,7 @@ public class LifeGameUI extends Application {
     private void randomGeneration() {
         if (timer != null) timer.stop();
         alive.clear();
-        board.drawGrid();
+        board.drawGrid(gridColor);
         int totalCells = currentCols * currentRows;
         int targetCount = (int) (totalCells * generationDensity / 100.0);
         if (targetCount == 0 && generationDensity > 0) targetCount = 1;
@@ -433,5 +446,24 @@ public class LifeGameUI extends Application {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+    private void changeGridColor() {
+        if (gridColor == Color.WHITE) {
+            gridColor = Color.BLACK;
+        }
+        else {
+            gridColor = Color.WHITE;
+        }
+        board.drawGrid(gridColor);
+    }
+    public static void setColor(Color color) {
+        gridColor = color;
+        gridToggler.setSelected(gridColor.equals(Color.BLACK));
+    }
+    public static String getGridColorString() {
+        if (gridColor.equals(Color.BLACK)) {
+            return "BLACK";
+        }
+        return "WHITE";
     }
 }

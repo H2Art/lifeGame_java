@@ -17,12 +17,12 @@ public class GameBoard {
         this.rows = rows;
     }
 
-    public void drawGrid() {
+    public void drawGrid(Color givenColor) {
         double width = cols * cellSize;
         double height = rows * cellSize;
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, width, height);
-        gc.setStroke(Color.WHITE);
+        gc.setStroke(givenColor);
         gc.setLineWidth(1.0);
         for (double x = 0; x <= width; x += cellSize) {
             gc.strokeLine(x, 0, x, height);
