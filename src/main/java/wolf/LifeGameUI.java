@@ -166,7 +166,7 @@ public class LifeGameUI extends Application {
         // Оборачиваем VBox в ScrollPane, чтобы можно было прокручивать
         ScrollPane scrollPane = new ScrollPane(uiBox);
         scrollPane.setFitToWidth(true);          // растягивать по ширине
-        scrollPane.setPrefHeight(MAX_BOARD_HEIGHT); // ограничиваем высоту (будет полоса, если элементов много)
+        scrollPane.setPrefHeight(MAX_BOARD_HEIGHT); // ограничиваем высоту
         scrollPane.setStyle("-fx-background: #e0e0e0; -fx-background-color: #e0e0e0;");
 
         HBox root = new HBox(canvas, scrollPane);
@@ -465,5 +465,11 @@ public class LifeGameUI extends Application {
             return "BLACK";
         }
         return "WHITE";
+    }
+    // -------------------------------------------------------------
+    // Точка входа в программу
+    // -------------------------------------------------------------
+    public static void main(String[] args) {
+        launch(args);
     }
 }
